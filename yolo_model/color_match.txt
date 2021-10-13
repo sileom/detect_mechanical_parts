@@ -1,0 +1,13 @@
+belt_tensioner_assembly 0 #123456
+oil_separator_crankcase_castiron_pt1 1 #ab3456
+oil_separator_crankcase_castiron 2 #12cd56
+back_oil_separator_crankcase_castiron 3 #1234ef
+air_pipe 4 #a23456
+air_pipe_pt1 5 #1b3456
+roller_bearing 6 #12c456
+counter-rotating_shaft_exhaust 7 #123d56
+counter-rotating_shaft_intake 8 #1234e6
+oil_separator_crankcase_plastic 9 #12345f
+oil_separator_crankcase_plastic_pt1 10 #1234ff
+compressor_holder 11 #aabbcc
+back_oil_separator_crankcase_plastic 12 #bc43ab
