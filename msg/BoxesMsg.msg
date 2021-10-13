@@ -1,0 +1,3 @@
+string action
+detect_mechanical_parts/DetectionMsg[] boundingBoxes
+int64 timestamp

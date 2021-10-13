@@ -1,0 +1,1 @@
+detect_mechanical_parts/DetectionMsg[] detections
