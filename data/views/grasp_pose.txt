@@ -1,0 +1,12 @@
+# nome <posx posy posz> <xx xy xz> <yx yy yz> <zx zy zz>
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_30.ply 0.0404 -0.0010 0.4159 -0.7944 -0.0202 -0.6071 -0.1242 -0.9729 0.1948 -0.5946 0.2302 0.7704
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_31.ply -0.0650 -0.0669 0.4120 -0.7309 -0.3124 -0.6068 0.3209 -0.9420 0.0984 -0.6024 -0.1228 0.7887
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_32.ply -0.1328 -0.0722 0.3520 -0.8557 -0.2054 0.4750 0.1756 -0.9786 -0.1069 0.4869 -0.0081 0.8735
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_33.ply -0.0311 0.0140 0.3550 -0.8158 -0.2843 0.5036 0.3339 -0.9426 0.0089 0.4722 0.1754 0.8639
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_34.ply 0.1013 0.1056 0.3618 -0.9188 0.2072 0.3360 -0.2342 -0.9713 -0.0416 0.3177 -0.1169 0.9410
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_35.ply 0.1138 0.1040 0.3730 -0.9302 -0.2260 0.2893 0.2188 -0.9741 -0.0575 0.2948 0.0098 0.9555
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_36.ply 0.0006 0.0168 0.3717 -0.9693 -0.1549 0.1911 0.1575 -0.9875 -0.0016 0.1890 0.0286 0.9816
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_37.ply -0.1013 -0.0881 0.3686 -0.9508 -0.2100 0.2276 0.2373 -0.9663 0.0998 0.1990 0.1489 0.9686
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_38.ply -0.0869 -0.0929 0.3854 -0.9934 -0.1128 -0.0219 0.1122 -0.9933 0.0268 -0.0248 0.0241 0.9994
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_39.ply 0.1351 0.0990 0.3909 -0.9834 -0.1813 -0.0046 0.1813 -0.9834 0.0052 -0.0054 0.0043 1.0000
+/home/monica/ros_catkin_ws_mine/src/detect_mechanical_parts/data/views/obj_40.ply 0.0148 0.0148 0.3901 -0.9786 -0.1920 0.0737 0.1951 -0.9801 0.0374 0.0650 0.0510 0.9966
