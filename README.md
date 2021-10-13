@@ -72,5 +72,8 @@ $ cd catkin_ws/
 $ source devel/setup.bash
 $ roslaunch detect_mechanical_parts detect_mechanical_parts_icosaf.launch conf_threshold:=0.75
 ```
+__
+## Note 13 October 2021
+The synchronization seems to work with the organized point cloud from the camera
 
 
