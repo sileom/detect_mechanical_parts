@@ -1,4 +1,4 @@
-# objects_picker
+# objects_picker (detect_mechanical_parts)
 
 ROS package to read a stream of images, detect mechanical parts of cars using YOLOv4 and view the detection results.
 ___
@@ -15,7 +15,7 @@ In order to install detect_mechanical_parts, clone this repository in your catki
 
 ```shell
 $ cd catkin_workspace/src
-$ git clone https://github.com/leonard0guerra/detect_mechanical_parts.git
+$ git clone https://github.com/sileom/detect_mechanical_parts.git
 $ cd ..
 $ catkin build detect_mechanical_parts
 ```
