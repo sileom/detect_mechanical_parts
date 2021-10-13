@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- 1. operazione -> Avvio della camera (per ora disattivato)-->
+    <!--<include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+	    <arg name="align_depth" default="true"/>
+        <arg name="filters" default="pointcloud"/>
+    </include>-->
+    
+    <!--<include file="$(find detect_mechanical_parts)/launch/detect_mechanical_parts_icosaf.launch" />-->
+
+
+    <!-- 2. operazione -> Specifica topic per comunicazione con TAIP -->
+    <arg name="subscribe_to_stream" default="subscribeToStream"/>
+    <arg name="unsubscribe_to_stream" default="unsubscribeToStream"/>
+    <arg name="acks_ds_sv" default="ack_ds_sv"/>
+    <arg name="acks_sv_ds" default="ack_sv_ds"/>
+    <arg name="image_url" default="imageReady"/>
+    <arg name="bounding_boxes" default="boundingBoxes"/>
+    <arg name="detections_bbox" default="detections_bbox"/>
+    <arg name="displacements" default="displacements"/>
+
+    <arg name="richiesta_coordinate" default="richiestaCoordinate"/>
+    <arg name="richiesta_coordinate_ack" default="richiestaCoordinateAck"/>
+    <arg name="coordinate" default="coordinate"/>
+    <arg name="prelievo_componente" default="prelievoComponente"/>
+    <arg name="deposito_componente" default="depositoComponente"/>
+    <arg name="componente_error" default="componenteError"/>
+    <arg name="prelievo_ack" default="prelievoComponenteAck"/>
+    <arg name="deposito_ack" default="depositoComponenteAck"/>
+
+    <node name="controller" pkg="detect_mechanical_parts" type="a_controller.py" output="screen">
+        <!--Hololens-->
+        <param name="acks_ds_sv" type="str" value="$(arg acks_ds_sv)"/>
+        <param name="acks_sv_ds" type="str" value="$(arg acks_sv_ds)"/>
+        <param name="subscribe_to_stream" type="str" value="$(arg subscribe_to_stream)"/>
+        <param name="unsubscribe_to_stream" type="str" value="$(arg unsubscribe_to_stream)"/>
+        <param name="image_url" type="str" value="$(arg image_url)"/>
+        <param name="bounding_boxes" type="str" value="$(arg bounding_boxes)"/>
+        <param name="detections_bbox" type="str" value="$(arg detections_bbox)"/>
+        <param name="displacements" type="str" value="$(arg displacements)"/>
+
+        <!--HMI-->
+        <param name="richiesta_coordinate" type="str" value="$(arg richiesta_coordinate)"/>
+        <param name="richiesta_coordinate_ack" type="str" value="$(arg richiesta_coordinate_ack)"/>
+        <param name="coordinate" type="str" value="$(arg coordinate)"/>
+        <param name="prelievo_componente" type="str" value="$(arg prelievo_componente)"/>
+        <param name="deposito_componente" type="str" value="$(arg deposito_componente)"/>
+        <param name="componente_error" type="str" value="$(arg componente_error)"/>
+        <param name="prelievo_ack" type="str" value="$(arg prelievo_ack)"/>
+        <param name="deposito_ack" type="str" value="$(arg deposito_ack)"/>
+
+    </node>
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    <!-- Name of part to detect -->
+    <!--<arg name="name_obj" default="oil_separator_crankcase_castiron"/>
+    <arg name="name_obj_pt" default="oil_separator_crankcase_castiron_pt1"/>
+    <arg name="name_obj" default="oil_separator_crankcase_plastic"/>
+    <arg name="name_obj_pt" default="oil_separator_crankcase_plastic_pt1"/>
+    <arg name="name_obj" default="air_pipe"/>
+    <arg name="name_obj_pt" default="air_pipe_pt1"/>-->
+
+    <!--<node name="dropper" type="drop" pkg="topic_tools" args="/camera/color/image_raw 1 2"/> --> <!--50 51" />-->
+
+    <!--<node name="$(anon detector_mechanical_parts)" pkg="detect_mechanical_parts" type="a_objs_detector_node.py" output="screen">
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="image_source_topic" type="str" value="$(arg image_source)"/>
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="detections_bbox_topic" type="str" value="$(arg detections_bbox)"/>
+        <param name="result_img_topic" type="str" value="$(arg result_img)"/>
+        <param name="grasp_pose_topic" type="str" value="$(arg grasp)"/>
+
+        <param name="yolo_cfg" type="str" value="$(arg yolo_cfg)"/>
+        <param name="yolo_weights" type="str" value="$(arg yolo_weights)"/>
+        <param name="obj_names" type="str" value="$(arg obj_names)"/>
+        <param name="conf_threshold" type="double" value="$(arg conf_threshold)"/>
+        <param name="nms_threshold" type="double" value="$(arg nms_threshold)"/>
+
+        <param name="name_obj" type="str" value="$(arg name_obj)"/>
+        <param name="name_obj_pt" type="str" value="$(arg name_obj_pt)"/>
+
+        <param name="color_match_file" type="str" value="$(arg color_match_file)"/>
+    </node>
+
+
+    <node name="qr_detector" pkg="detect_mechanical_parts" type="a_qrcode_detector.py" output="screen">
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="image_source_topic" type="str" value="$(arg image_source)"/>
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="color_match_file" type="str" value="$(arg color_match_file)"/>
+    </node>
+ 
+    <node name="estimator" pkg="detect_mechanical_parts" type="a_pose_estimator_node.py" output="screen">
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="grasp_pose_topic" type="str" value="$(arg grasp)"/>
+        <param name="depth_source_topic" type="str" value="$(arg depth_source)"/>
+        <param name="pointcloud_source_topic" type="str" value="$(arg pointcloud_source)"/>
+    </node>
+
+    <node name="$(anon visualizer)" pkg="detect_mechanical_parts" type="a_nn_detection_visualizer.py" output="screen">
+        <param name="view_image_topic" value="$(arg detections_image)"/>
+        <param name="result_img_topic" value="$(arg result_img)"/>
+    </node>-->
+
+</launch>

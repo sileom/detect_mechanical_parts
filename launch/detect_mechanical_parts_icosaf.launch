@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<launch>
+    <!--<include file="$(find realsense2_camera)/launch/rs_rgbd.launch" >
+	    <arg name="align_depth" default="true"/>
+        <arg name="filters" default="pointcloud"/>
+    </include>-->
+
+    <!-- Topic-->
+    <arg name="detections_image" default="detections_image"/>
+    
+    <!--<arg name='image_source' default='/device_0/sensor_1/Color_0/image/data'/>-->
+    <arg name='image_source' default='/camera/color/image_raw'/>
+    
+    <!--<arg name='depth_source' default='/camera/aligned_depth_to_color/image_raw'/>-->
+    <arg name='depth_source' default='/camera/aligned_depth_to_color/image_raw'/>
+
+    <!--<arg name='pointcloud_source' default='/camera/depth/color/points'/>-->
+    <arg name='pointcloud_source' default='/camera/depth_registered/points'/> <!--default='/camera/depth/color/points'/>-->
+
+
+
+    <arg name='bbox' default='bbox'/>
+    <arg name='result_img' default='result_img'/>
+    <arg name='detections_bbox' default='detections_bbox'/>
+    <arg name='grasp' default='grasp_pose'/>
+
+
+    <!-- # Arg Detector -->
+    <!-- ## Path File-->
+    <!-- RGB -->
+    <arg name="yolo_cfg" default="yolo_model/yolo-obj.cfg"/> 
+    <arg name="yolo_weights" default="yolo_model/yolo-obj.weights"/> 
+    <arg name="obj_names" default="yolo_model/obj.names"/>
+
+    <!-- GRAY -->
+    <!--<arg name="yolo_cfg" default="yolo_model/yolov4_objs_gray.cfg"/> 
+    <arg name="yolo_weights" default="yolo_model/yolov4_objs_gray_last.weights"/> -->
+
+    <!--<arg name="yolo_cfg" default="yolo_model/unibas-hole.cfg"/>
+    <arg name="yolo_weights" default="yolo_model/unibas-hole.weights"/>
+    <arg name="obj_names" default="yolo_model/unibas-hole.names"/>-->
+
+
+    <arg name="color_match_file" default="yolo_model/color_match.txt"/>
+
+
+
+    <!-- ## Thresholds-->
+    <arg name="conf_threshold" default="0.3"/>
+    <arg name="nms_threshold" default="0.4"/>
+
+
+    <!-- Name of part to detect -->
+    <!--<arg name="name_obj" default="oil_separator_crankcase_castiron"/>
+    <arg name="name_obj_pt" default="oil_separator_crankcase_castiron_pt1"/>-->
+    <arg name="name_obj" default="oil_separator_crankcase_plastic"/>
+    <arg name="name_obj_pt" default="oil_separator_crankcase_plastic_pt1"/>
+    <!--<arg name="name_obj" default="air_pipe"/>
+    <arg name="name_obj_pt" default="air_pipe_pt1"/>-->
+
+    <!--<node name="dropper" type="drop" pkg="topic_tools" args="/camera/color/image_raw 50 51"/>--> <!--1 2, 50 51" />-->
+
+    <node name="objs_detector" pkg="detect_mechanical_parts" type="a_objs_detector_node.py" output="screen">
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="image_source_topic" type="str" value="$(arg image_source)"/>
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="detections_bbox_topic" type="str" value="$(arg detections_bbox)"/>
+        <param name="result_img_topic" type="str" value="$(arg result_img)"/>
+        <param name="grasp_pose_topic" type="str" value="$(arg grasp)"/>
+
+        <param name="yolo_cfg" type="str" value="$(arg yolo_cfg)"/>
+        <param name="yolo_weights" type="str" value="$(arg yolo_weights)"/>
+        <param name="obj_names" type="str" value="$(arg obj_names)"/>
+        <param name="conf_threshold" type="double" value="$(arg conf_threshold)"/>
+        <param name="nms_threshold" type="double" value="$(arg nms_threshold)"/>
+
+        <param name="name_obj" type="str" value="$(arg name_obj)"/>
+        <param name="name_obj_pt" type="str" value="$(arg name_obj_pt)"/>
+
+        <param name="color_match_file" type="str" value="$(arg color_match_file)"/>
+    </node>
+
+
+    <!--<node name="qr_detector" pkg="detect_mechanical_parts" type="a_qrcode_detector.py" output="screen">
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="image_source_topic" type="str" value="$(arg image_source)"/>
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="color_match_file" type="str" value="$(arg color_match_file)"/>
+    </node>-->
+ 
+    <node name="estimator" pkg="detect_mechanical_parts" type="a_pose_estimator_node.py" output="screen">
+        <param name="bbox_topic" type="str" value="$(arg bbox)"/>
+        <param name="detections_image_topic" type="str" value="$(arg detections_image)"/>
+        <param name="grasp_pose_topic" type="str" value="$(arg grasp)"/>
+        <param name="depth_source_topic" type="str" value="$(arg depth_source)"/>
+        <param name="pointcloud_source_topic" type="str" value="$(arg pointcloud_source)"/>
+    </node>
+
+    <node name="visualizer" pkg="detect_mechanical_parts" type="a_nn_detection_visualizer.py" output="screen">
+        <param name="view_image_topic" value="$(arg detections_image)"/>
+        <param name="result_img_topic" value="$(arg result_img)"/>
+    </node>
+
+</launch>
