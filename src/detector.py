@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import cv2 as cv
 import numpy as np
 from utils import Utils
@@ -40,9 +41,14 @@ class Detector:
             self.net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA)
 
         layer_names = self.net.getLayerNames()
+        #self.__output_layer = [layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
         self.__output_layer = [layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
     def detect_objects(self, image):
+        #print(image.shape)
+        cv.imwrite("../catkin_ws/src/detect_mechanical_parts/data/image_detections_pho_prima.png", image)
+        #image = cv.resize(image, (416, 416), interpolation = cv.INTER_AREA)
+        #cv.imwrite("../catkin_ws/src/detect_mechanical_parts/data/image_detections_pho.png", image)
         blob = cv.dnn.blobFromImage(image, scalefactor=1/255.0, size=(416, 416), swapRB=True, crop=False)
         self.net.setInput(blob)
         outputs = self.net.forward(self.__output_layer)
@@ -76,7 +82,7 @@ class Detector:
                     (centerX, centerY, width, height) = box.astype("int")
                     x = int(centerX - (width / 2))
                     y = int(centerY - (height / 2))
-                    if self.labels[classID] == self.obj_pt: #"oil_separator_crankcase_castiron_pt1":
+                    if self.labels[classID] == self.obj: #self.obj_pt: #"oil_separator_crankcase_castiron_pt1":
                         bbox_part = [classID, x, y, int(width), int(height)]
                         children.append(bbox_part)
                         parents.append(self.findParent(outputs, bbox_part, H, W))
