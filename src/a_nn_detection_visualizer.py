@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import rospy
@@ -30,9 +30,10 @@ class Visualizer:
     except CvBridgeError as cve:
       rospy.logerr(str(cve))
       return
-    
-    cv.imshow('Object Detection ', image)
-    cv.waitKey(30)
+    dsize = (int(image.shape[1] * 50 / 100), int(image.shape[0] * 50 / 100))
+    output = cv.resize(image, dsize)
+    cv.imshow('Object Detection ', output)
+    cv.waitKey(0)
    
 def main(args):
   visualizer =  Visualizer()

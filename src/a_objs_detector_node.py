@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -20,15 +20,15 @@ class DetectorNode:
     def __init__(self):
         rospy.init_node('detector_mechanical_parts', anonymous=True)
         self.node_name = rospy.get_name()
-        yolo_cfg = rospy.get_param(self.node_name + '/yolo_cfg')
-        yolo_weights = rospy.get_param(self.node_name + '/yolo_weights')
-        obj_names = rospy.get_param(self.node_name + '/obj_names')
+        self.yolo_cfg = rospy.get_param(self.node_name + '/yolo_cfg')
+        self.yolo_weights = rospy.get_param(self.node_name + '/yolo_weights')
+        self.obj_names = rospy.get_param(self.node_name + '/obj_names')
 
-        conf_threshold = float(rospy.get_param(self.node_name + '/conf_threshold'))
-        nms_threshold = float(rospy.get_param(self.node_name + '/nms_threshold'))
+        self.conf_threshold = float(rospy.get_param(self.node_name + '/conf_threshold'))
+        self.nms_threshold = float(rospy.get_param(self.node_name + '/nms_threshold'))
 
-        name_obj = rospy.get_param(self.node_name + '/name_obj')
-        name_obj_pt = rospy.get_param(self.node_name + '/name_obj_pt')
+        self.name_obj = rospy.get_param(self.node_name + '/name_obj')
+        self.name_obj_pt = rospy.get_param(self.node_name + '/name_obj_pt')
 
         color_match_file = rospy.get_param(self.node_name + '/color_match_file')
         Utils.load_color_match(color_match_file)
@@ -36,13 +36,13 @@ class DetectorNode:
 
         
 
-        self.detector = Detector(yolo_cfg=yolo_cfg, \
-                                 yolo_weights=yolo_weights,\
-                                 obj_names=obj_names,\
-                                 conf_threshold=conf_threshold,\
-                                 nms_threshold=nms_threshold, \
-                                 obj=name_obj,\
-                                 obj_pt=name_obj_pt)
+        #self.detector = Detector(yolo_cfg=yolo_cfg, \
+        #                         yolo_weights=yolo_weights,\
+        #                         obj_names=obj_names,\
+        #                         conf_threshold=conf_threshold,\
+        #                         nms_threshold=nms_threshold, \
+        #                         obj=name_obj,\
+        #                         obj_pt=name_obj_pt)
         
         self.__bridge = CvBridge()
         '''
@@ -54,6 +54,7 @@ class DetectorNode:
         bbox_topic = rospy.get_param(self.node_name + '/bbox_topic')
         detections_bbox_topic = rospy.get_param(self.node_name + '/detections_bbox_topic')
         result_img_topic = rospy.get_param(self.node_name + '/result_img_topic')
+        object_topic = rospy.get_param(self.node_name + '/topic_obj')
         
         #buffer size = 2**24 | 480*640*3
         rospy.Subscriber(image_source_topic, Image, self.detect_image, queue_size=1, buff_size=2**24)
@@ -70,7 +71,20 @@ class DetectorNode:
         self.errors_publisher = rospy.Publisher("/errors", String, queue_size=1)
 
         #self.detect_image([]) #------------------------------
+        rospy.Subscriber(object_topic, String, self.setDetectedObject, queue_size=1, buff_size=2**24) #object to detect
+        self.detector_created = False
 
+
+    def setDetectedObject(self, data):
+        obj = data.data
+        self.detector = Detector(yolo_cfg=self.yolo_cfg, \
+                         yolo_weights=self.yolo_weights,\
+                         obj_names=self.obj_names,\
+                         conf_threshold=self.conf_threshold,\
+                         nms_threshold=self.nms_threshold, \
+                         obj=obj,\
+                         obj_pt=self.name_obj_pt)
+        self.detector_created = True
 
         
     def get_qr_dim(self, bb):
@@ -87,14 +101,20 @@ class DetectorNode:
         
 
     def detect_image(self, data):
+        if self.detector == False:
+            return
+        
         try:
-            image_i = self.__bridge.imgmsg_to_cv2(data, 'bgr8')
+            image_i = self.__bridge.imgmsg_to_cv2(data, 'rgb8')
+            cv.imwrite("/home/user/catkin_ws/src/detect_mechanical_parts/src/origin.jpg", image_i)
             #cv.imwrite("../ros_catkin_ws_mine/src/detect_mechanical_parts/data/image_source.png", image_i)
             #print("inizio test")#------------------------------
             #image_i = cv.imread("/home/monica/Scaricati/test3_Color.png")#------------------------------
             # PER USARE L'RGB --> decommentare la riga seguente e commentare le due successive
-            image = image_i.copy()
+            #image = image_i.copy()
             #image_gray = cv.cvtColor(image_i, cv.COLOR_BGR2GRAY) # Convert in grayScale
+            # GRAY PHOTONEO
+            image = image_i.copy()
             #image = cv.cvtColor(image_gray, cv.COLOR_GRAY2RGB)   # Convert in "grayScale with 3channel"
         except CvBridgeError as cve:
             rospy.logerr(str(cve))
@@ -108,11 +128,11 @@ class DetectorNode:
         qr_data,qr_bbox,qr_rectifiedImage = self.qrDecoder.detectAndDecode(image_copy)
 
         try:
-            detection_message = self.__bridge.cv2_to_imgmsg(image, "bgr8")
+            detection_message = self.__bridge.cv2_to_imgmsg(image, "rgb8")
             self.__publisher.publish(detection_message)
-            cv.imwrite("../ros_catkin_ws_mine/src/detect_mechanical_parts/data/image_detections.png", image)
-            absolute_path = os.path.abspath("../ros_catkin_ws_mine/src/detect_mechanical_parts/data/image_detections.png")
-            self.image_url_publisher.publish(absolute_path)
+            cv.imwrite("/home/user/icosaf.com/html/image_detections.png", image)
+            #absolute_path = os.path.abspath("/home/user/icosaf.com/html/image_detections.png")
+            self.image_url_publisher.publish("http://icosaf.com/image_detections.png")
 
             detections_msg = DetectionArrayMsg()
             if len(idxs)>0: # the system finds any objects
@@ -126,6 +146,7 @@ class DetectorNode:
                     det_temp.w = boxes[i][2]
                     det_temp.h = boxes[i][3]
                     det_temp.header.stamp = data.header.stamp
+                    print("x {} y {} w {} h {}".format(det_temp.x, det_temp.y, det_temp.w, det_temp.y))
                     detections_msg.detections.append(det_temp)
             else:
                 self.errors_publisher.publish("no_objects")

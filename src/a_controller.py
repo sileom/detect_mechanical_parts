@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import rospy
@@ -7,12 +7,14 @@ import message_filters
 from detector import Detector
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
+from geometry_msgs.msg import Pose
 
 from detect_mechanical_parts.msg import SubscribeToStreamMsg, AckMsg, ImageReadyMsg, BoxesMsg, DisplacementMsg, DetectionArrayMsg
 from detect_mechanical_parts.msg import RichiestaCoordinateMsg, RichiestaCoordinateStatusMsg, CoordinateMsg, PrelievoComponenteMsg, ComponenteErrorMsg, DepositoComponenteMsg, ComponenteStatusMsg
 
 import cv2 as cv
 import numpy as np
+import time
 
 class Controller:
 
@@ -24,6 +26,7 @@ class Controller:
 
         self.currentComponent = ""
         self.currentTaskID = 0
+        self.currentAction = ""
 
 
         # ------------------ HOLOLENS
@@ -72,6 +75,62 @@ class Controller:
         self.prelievo_ack_publisher = rospy.Publisher(prelievo_ack_topic, ComponenteStatusMsg, queue_size=1)
         self.deposito_ack_publisher = rospy.Publisher(deposito_ack_topic, ComponenteStatusMsg, queue_size=1)
 
+        # ------------------ Robot UR
+        to_robot_topic = rospy.get_param(self.node_name + '/topic_to_robot')
+        from_robot_topic = rospy.get_param(self.node_name + '/topic_from_robot')
+        rospy.Subscriber(from_robot_topic, String, self.callback_robot_response)     # mi sottoscrivo alle risposte del robot
+        self.from_robot_publisher = rospy.Publisher(to_robot_topic, String, queue_size=10) # pubblico i comandi per il robot 
+        self.gripper_to_use = 1
+
+        # ------------------ Object detector
+        object_topic = rospy.get_param(self.node_name + '/topic_obj')
+        self.obj_to_detect_publisher = rospy.Publisher(object_topic, String, queue_size=10) # pubblico gli oggetti da riconoscere
+        
+        grasp_pose_topic = rospy.get_param(self.node_name + '/grasp_pose_topic')
+        rospy.Subscriber(grasp_pose_topic, Pose, self.receiveObjectPose, queue_size=1, buff_size=2**24)
+    
+    def receiveObjectPose(self, data):
+        msg = CoordinateMsg()
+        msg.task_id = self.currentTaskID
+        msg.action = "richiesta coordinate"
+        msg.component = self.currentComponent
+        ## TODO fare parsing di coordinate
+        msg.coordinate = "X:0.1,Y:0.2,Z:0.8"
+        self.coordinate_publisher.publish(msg)
+
+
+    def matchObjAndCodes(self, code):
+        if(self.currentComponent == '10132161F'): # COPERCHIO OLIO
+            return "oil_separator_crankcase_plastic"
+        elif(self.currentComponent == '41572014F'):  # FLEX PLATE
+            return "flexplate"
+        elif(self.currentComponent == '21632313G'):  # DISTANZIALE
+            return "spacer"
+        return "rail"
+
+    def callback_robot_response(self, data):
+        print("Robot send message.")
+        print(data.data)
+        print(type(self.currentTaskID))
+        if(data.data == "ok" or data.data == "OK"):
+            if(self.currentTaskID == 507 or self.currentAction == "adjust"): # il robot e' in posizione avvio il detector
+                self.obj_to_detect_publisher.publish(self.matchObjAndCodes(self.currentComponent))
+                time.sleep(2)
+                print("Richiesta servizio")
+                # avvio il servizio per prendere i dati dalla camera
+                os.system("rosservice call /phoxi_camera/get_frame \"in_: -1\"")
+                print("Servizio attivo")
+            if(self.currentTaskID == 508): # prelievo componente
+                self.send_status_componente("prelievo componente", "OK", "")
+            if(self.currentTaskID == 509): # deposito componente
+                self.send_status_componente("deposito componente", "OK", "")
+            
+        elif(data.data == "fail" or data.data == "FAIL"):
+            if(self.currentTaskID == 508): # prelievo componente
+                self.send_status_componente("prelievo componente", "NOK", "R_ROB")
+            if(self.currentTaskID == 509): # deposito componente
+                self.send_status_componente("deposito componente", "NOK", "R_ROB")
+    
     def send_ack_hmi_richiesta(self, data, valueOfStatus):
         status_msg = RichiestaCoordinateStatusMsg()
         status_msg.task_id = data.task_id
@@ -95,17 +154,22 @@ class Controller:
         print()
         self.currentComponent = data.component
         self.currentTaskID = data.task_id
-        self.send_ack_hmi_richiesta(data, "ACK")
-        # SPOSTARE IL ROBOT E AVVIARE IL NODO (?)
-        #
-        # RIGA SUCCESSIVA DA SPOSTARE QUANDO LE COORDINATE SONO STATE CALCOLATE DAL SV
-        coord_msg = CoordinateMsg()
-        coord_msg.task_id = self.currentTaskID
-        coord_msg.action = "richiestaCoordinate"
-        coord_msg.status = "OK"
-        coord_msg.component = self.currentComponent
-        coord_msg.coordinate = "X: {}, Y: {}, Z: {}".format(0.12, -0.32, 0.56)
-        self.coordinate_publisher.publish(coord_msg)
+        self.send_ack_hmi_richiesta(data, "ACK") 
+        self.newRequest = True
+        # POSIZIONI PER INQUADRARE - NB: il numero iniziale rappresenta il tipo di end-effector per la presa
+        if(self.currentComponent == '35032008F'): # RAIL '10132161F'): # COPERCHIO OLIO 
+            self.gripper_to_use = 1
+            self.from_robot_publisher.publish("(1, -18.66, -425.92, -183.85, 2.849, -1.218, -0.311)") # mm rotvec
+            #self.from_robot_publisher.publish("1, -1.68, -2.48, -2.42, 0.28, 1.45, 3.83)")
+        elif(self.currentComponent == '41572014F'):  # FLEX PLATE
+            self.gripper_to_use = 2
+            #self.from_robot_publisher.publish("2, -0.065, -0.389, -0.332, 2.559, -1.253, -0.205)") # DA MODIFICARE
+            self.from_robot_publisher.publish("2, -0.065, -0.389, -0.332, 2.559, -1.253, -0.205)") 
+        elif(self.currentComponent == '21632313G'):  # DISTANZIALE
+            self.gripper_to_use = 3
+            #self.from_robot_publisher.publish("3, -0.065, -0.389, -0.332, 2.559, -1.253, -0.205)") # DA MODIFICARE
+            self.from_robot_publisher.publish("3, -0.065, -0.389, -0.332, 2.559, -1.253, -0.205)")
+
 
     def send_status_componente(self, valueOfAction, valueOfStatus, valueOfError):
         msg = ComponenteErrorMsg()
@@ -125,8 +189,16 @@ class Controller:
         print(data.coordinate)
         print()
         self.send_ack_hmi_pre_dep(data, "OK")
-        # MANDARE IL ROBOT A PRELEVARE, fare parsing delle coordinate
-        self.send_status_componente("prelievo componente", "OK", "")
+        # parsing coordinate X:0.12,Y:0.03,Z:0.56
+        componenti_pos = data.coordinate.split(',')
+        x = float(componenti_pos[0].split(':')[1])
+        y = float(componenti_pos[1].split(':')[1])
+        z = float(componenti_pos[2].split(':')[1])
+        #a = float(componenti_pos[3].split(':')[1])
+        ## TODO conversione di orientamento
+        message_for_robot = d = '({}, {}, {}, {}, {}, {}, {})'.format(self.gripper_to_use, x,y,z, 2.559, -1.253, -0.205) # TODO AGGIUNGERE ORIENTAMENTO DEFAULT
+        # mando il robot
+        self.from_robot_publisher.publish(message_for_robot)
 
     
     def deposito(self, data):
@@ -136,7 +208,13 @@ class Controller:
         print()
         self.send_ack_hmi_pre_dep(data, "OK")
         # MANDARE IL ROBOT A DEPOSITARE
-        self.send_status_componente("deposito componente", "NOK", "error_description")
+        # posizioni di deposito su AVG
+        if(self.currentComponent == '10132161F'): # COPERCHIO OLIO
+            self.from_robot_publisher.publish("xc yc zc thetaXc thetaYc thetaZc")
+        elif(self.currentComponent == '41572014F'):  # FLEX PLATE
+            self.from_robot_publisher.publish("xf yf zf thetaXf thetaYf thetaZf")
+        elif(self.currentComponent == '21632313G'):  # DISTANZIALE
+            self.from_robot_publisher.publish("xd yd zd thetaXd thetaYd thetaZd")
         
 
     def acks_from_ds_callback(self, data):
@@ -182,7 +260,13 @@ class Controller:
         print("Angle X: {}".format(data.angle))
         print("Timestamp: {}".format(data.timestamp))
         print("------ END MESSAGE ------")
+        self.currentAction = data.action
         self.send_ack(data)
+        # messaggio per il robot 
+        message_for_robot = '({}, {}, {}, {})'.format(self.gripper_to_use, data.offsetX, data.offsetY, data.angle) 
+        # mando il robot
+        self.from_robot_publisher.publish(message_for_robot)
+        
 
 
     def errors_handler(self, data):
@@ -217,6 +301,13 @@ class Controller:
 def main(args):
 
     controller = Controller()
+    #while(True):
+    #    image_url_msg = ImageReadyMsg()
+    #    image_url_msg.action = 'imageReady'
+    #    image_url_msg.url = "/home/user/catkin_ws/src/detect_mechanical_parts/data/image_predictions.png"
+    #    image_url_msg.timestamp = int(rospy.get_rostime().to_sec())
+    #    controller.image_url_publisher.publish(image_url_msg)
+
     try:
         rospy.spin()
     except KeyboardInterrupt:
